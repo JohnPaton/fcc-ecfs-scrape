@@ -2,11 +2,15 @@
 
 import os
 import json
-import urllib2
 import argparse
 import time
 import sys
 from collections import OrderedDict
+
+try:
+    from urllib2 import urlopen
+except ModuleNotFoundError:
+    from urllib.request import urlopen
 
 APIKEY = os.environ['APIKEY']
 TEMPLATEURL = 'https://publicapi.fcc.gov/ecfs/filings?api_key={}&express_comment=1&proceedings.name={}&sort=date_received,ASC&limit={}&offset={}&date_received=%5Bgte%5D{}%5Blte%5D{}'
@@ -15,8 +19,8 @@ def fetch(proceeding, limit, paging, offset, datestart, dateend):
     found = paging
     while offset < limit and found == paging:
         url = TEMPLATEURL.format(APIKEY, proceeding, paging, offset, datestart, dateend)
-        print >> sys.stderr, "Requesting {}".format(url)
-        res = urllib2.urlopen(url)
+        print("Requesting {}".format(url), file=sys.stderr)
+        res = urlopen(url)
         found = process(res)
         offset = offset + found
         time.sleep(2)
@@ -29,9 +33,9 @@ def process(response):
         try:
             # process comments
             if f['submissiontype']['short'] == 'COMMENT':
-               print transform(f)
+               print(transform(f))
         except Exception as e:
-            print >> sys.stderr, e, i, f
+            print(e, i, f, file=sys.stderr)
             pass
         i = i + 1
 
